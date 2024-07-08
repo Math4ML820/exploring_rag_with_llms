@@ -1,0 +1,7 @@
+PyMuPDF
+openai
+transformers
+torch
+logging
+faiss-cpu
+numpy
