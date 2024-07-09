@@ -146,7 +146,7 @@ def main(pdf_file):
         indices = search_vector_database(index, query_embedding)
         relevant_chunks = [text_chunks[i] for i in indices]
 
-        model_id = "meta-llama/Llama-2-13b-chat-hf"
+        model_id = "gpt-3.5-turbo"
         print("\n\n Question: ", question)
         answer = interact_with_llm(model_id, relevant_chunks, question)
         # Assuming 'answer' contains the response as shown in your example
