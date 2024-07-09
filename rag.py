@@ -3,7 +3,6 @@ from openai import OpenAI
 from transformers import BertTokenizer, BertModel
 import torch
 import sys
-import logging
 import json
 import faiss
 import numpy as np
@@ -11,19 +10,6 @@ import os
 
 # Set the environment variable to allow multiple OpenMP runtimes
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Define a filter to exclude logs from httpx
-class ExcludeHttpxFilter(logging.Filter):
-    def filter(self, record):
-        return not record.name.startswith('httpx')
-
-# Add the filter to the root logger
-root_logger = logging.getLogger()
-root_logger.addFilter(ExcludeHttpxFilter())
 
 # Initialize OpenAI client
 client = OpenAI(
@@ -37,7 +23,7 @@ def load_chunk_pdf(pdf_file):
     
     # Open the PDF file
     doc = pymupdf.open(pdf_file)
-    logger.info(f"Opened PDF file: {pdf_file}")
+    print(f"Opened PDF file: {pdf_file}")
 
     # Iterate through each page in the document
     total_pages = len(doc)
@@ -54,11 +40,11 @@ def load_chunk_pdf(pdf_file):
             text_chunks.append(chunk)
         
         # Log progress for each page processed
-        logger.info(f"Processed page {page_num + 1}/{total_pages}")
+        print(f"Processed page {page_num + 1}/{total_pages}")
 
     # Close the document
     doc.close()
-    logger.info("Closed PDF file.")
+    print("Closed PDF file.")
     
     return text_chunks
 
@@ -73,23 +59,23 @@ def embed_chunks(text_chunks):
             outputs = model(**inputs)
         for j in range(len(batch_chunks)):
             embeddings.append(outputs.last_hidden_state[j, 0, :].numpy())
-        logger.info(f"Processed {i + len(batch_chunks)}/{len(text_chunks)} chunks")
+        print(f"Processed {i + len(batch_chunks)}/{len(text_chunks)} chunks")
     return np.array(embeddings)
 
 def create_vector_database(embeddings):
     dimension = embeddings.shape[1]
     index = faiss.IndexFlatL2(dimension)
     index.add(embeddings)
-    logger.info("Vector database created and embeddings added.")
+    print("Vector database created and embeddings added.")
     return index
 
 def save_vector_database(index, file_path):
     faiss.write_index(index, file_path)
-    logger.info(f"Vector database saved to {file_path}.")
+    print(f"Vector database saved to {file_path}.")
 
 def load_vector_database(file_path):
     index = faiss.read_index(file_path)
-    logger.info(f"Vector database loaded from {file_path}.")
+    print(f"Vector database loaded from {file_path}.")
     return index
 
 def search_vector_database(index, query_embedding, k=5):
@@ -117,9 +103,9 @@ def interact_with_llm(model, relevant_chunks, question):
 def main(pdf_file):
     
     # Load chunks from PDF
-    logger.info("Loading chunks from PDF...")
+    print("Loading chunks from PDF...")
     text_chunks = load_chunk_pdf(pdf_file)
-    logger.info(f"Total text chunks loaded: {len(text_chunks)}")
+    print(f"Total text chunks loaded: {len(text_chunks)}")
 
     pdf_filename = os.path.basename(pdf_file)
     pdf_name, _ = os.path.splitext(pdf_filename)
